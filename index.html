@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dau Elementary School Reading Adventure Hub - Minecraft Edition</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+<!-- SheetJS Engine for Excel (.xlsx) Exporting -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --mc-dirt: #866043;
+    --mc-grass: #5c8e32;
+    --mc-stone: #737373;
+    --mc-wood: #674a27;
+    --mc-border: #3c2714;
+    --mc-gold: #f1c40f;
+  }
+
+  body {
+    font-family: 'Fredoka', 'VT323', sans-serif; /* Friendly & Readable Font for Young Kids */
+    user-select: none;
+    -webkit-user-select: none;
+    overflow-x: hidden;
+    background-color: #5c8e32;
+    image-rendering: pixelated;
+    color: #ffffff;
+    font-size: 1.35rem;
+    letter-spacing: 0.03em;
+  }
+
+  .font-minecraft { font-family: 'Press Start 2P', cursive; }
+  .font-kids { font-family: 'Fredoka', sans-serif; font-weight: 700; }
+  
+  #canvas-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    pointer-events: none;
+  }
+  
+  /* Minecraft Block Box Style */
+  .mc-button {
+    background: #737373;
+    border: 4px solid #000;
+    box-shadow: inset -4px -4px 0px 0px #3f3f3f, inset 4px 4px 0px 0px #aaa;
+    color: #fff;
+    text-shadow: 2px 2px #000;
+    image-rendering: pixelated;
+    transition: all 0.1s;
+  }
+  .mc-button:hover {
+    background: #8b8b8b;
+    border-color: #000;
+    box-shadow: inset -4px -4px 0px 0px #4f4f4f, inset 4px 4px 0px 0px #ccc;
+  }
+  .mc-button:active {
+    box-shadow: inset 4px 4px 0px 0px #3f3f3f, inset -4px -4px 0px 0px #aaa;
+  }
+
+  .mc-button-green {
+    background: #5c8e32;
+    box-shadow: inset -4px -4px 0px 0px #2d4c12, inset 4px 4px 0px 0px #8ed447;
+  }
+  .mc-button-green:hover { background: #6daa3b; }
+
+  .mc-button-gold {
+    background: #e67e22;
+    box-shadow: inset -4px -4px 0px 0px #a84216, inset 4px 4px 0px 0px #f39c12;
+  }
+  .mc-button-gold:hover { background: #f39c12; }
+
+  .mc-button-red {
+    background: #c0392b;
+    box-shadow: inset -4px -4px 0px 0px #7b241c, inset 4px 4px 0px 0px #e74c3c;
+  }
+  .mc-button-red:hover { background: #e74c3c; }
+
+  .mc-panel {
+    background: rgba(60, 39, 20, 0.94);
+    border: 4px solid #000;
+    box-shadow: inset -4px -4px 0px 0px #21150b, inset 4px 4px 0px 0px #674a27;
+    color: #fff;
+  }
+
+  .mc-panel-light {
+    background: rgba(245, 245, 220, 0.98);
+    border: 4px solid #000;
+    box-shadow: inset -4px -4px 0px 0px #888888, inset 4px 4px 0px 0px #ffffff;
+    color: #000;
+  }
+
+  .draggable-item {
+    touch-action: none;
+    cursor: grab;
+    image-rendering: pixelated;
+  }
+  .draggable-item:active {
+    cursor: grabbing;
+    transform: scale(1.08);
+    z-index: 50;
+  }
+
+  .drop-target {
+    transition: all 0.1s ease;
+  }
+  .drop-target.drag-over {
+    background-color: #f1c40f !important;
+    border-color: #ffffff !important;
+  }
+
+  @keyframes floatCoin {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    50% { transform: translateY(-80px) scale(1.3); opacity: 0.9; }
+    100% { transform: translateY(-160px) scale(0.5); opacity: 0; }
+  }
+
+  .heart-lost {
+    filter: grayscale(100%);
+    opacity: 0.2;
+  }
+
+  @keyframes bounceSteve {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .steve-avatar-anim {
+    animation: bounceSteve 0.8s infinite steps(2);
+  }
+
+  /* Custom Pixel Scrollbars */
+  ::-webkit-scrollbar {
+    width: 12px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #3c2714;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #737373;
+    border: 2px solid #000;
+  }
+
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #certificate-modal, #certificate-modal * {
+      visibility: visible;
+    }
+    #certificate-modal {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: white !important;
+      color: black !important;
+      padding: 0 !important;
+    }
+    .no-print {
+      display: none !important;
+    }
+  }
+</style>
+</head>
+<body class="min-h-screen text-white flex flex-col relative font-kids">
+
+<!-- 3D Minecraft Background Canvas -->
+<div id="canvas-container"></div>
+
+<!-- Class Achievement Celebration Banner Overlay -->
+<div id="festival-banner" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-50 mc-panel p-6 border-4 border-yellow-400 text-center animate-bounce">
+  <h2 class="font-minecraft text-xl text-yellow-400 drop-shadow">🎉 CLASS READING CHAMPIONS! 🎉</h2>
+  <p id="festival-banner-text" class="text-2xl font-bold text-white mt-2">Weekly Reading Goal Achieved! Village Festival in Progress!</p>
+</div>
+
+<!-- Top Navigation Header -->
+<header class="relative z-20 bg-stone-900 text-white border-b-4 border-black shadow-2xl">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+    <!-- School Logo & Title -->
+    <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('home')">
+      <!-- Minecraft Blocky School Logo -->
+      <div class="w-12 h-12 bg-amber-800 border-4 border-black flex items-center justify-center font-minecraft text-yellow-400 text-2xl shadow-inner">
+        🧱
+      </div>
+      
+      <div>
+        <h1 class="font-minecraft text-sm md:text-base text-yellow-400 drop-shadow">
+          Dau Elementary School
+        </h1>
+        <p class="text-base font-kids tracking-wider text-emerald-400">
+          MINECRAFT READING HUB • DIVISION OF MABALACAT CITY
+        </p>
+      </div>
+    </div>
+
+    <!-- Navigation Options -->
+    <nav class="flex flex-wrap items-center gap-2 text-base">
+      <button onclick="playSFX('click'); switchView('home')" class="mc-button px-3 py-2 text-sm font-kids flex items-center space-x-1">
+        <span>🏠</span> <span>Home</span>
+      </button>
+      <button onclick="playSFX('click'); switchView('villages')" class="mc-button px-3 py-2 text-sm font-kids flex items-center space-x-1">
+        <span>🏘️</span> <span>Villages</span>
+      </button>
+      <button onclick="playSFX('click'); switchView('realms')" class="mc-button px-3 py-2 text-sm font-kids flex items-center space-x-1">
+        <span>🏰</span> <span>Quests</span>
+      </button>
+      <button onclick="playSFX('click'); switchView('dashboard')" class="mc-button px-3 py-2 text-sm font-kids flex items-center space-x-1">
+        <span>📊</span> <span>Dashboard</span>
+      </button>
+
+      <!-- BGM Sound Toggle (Kids Gameshow Theme) -->
+      <button id="bgmToggleBtn" onclick="togglePlaytimeBGM()" class="mc-button mc-button-gold px-3 py-2 text-sm font-kids flex items-center space-x-1">
+        <span id="bgmIcon">🎵</span> <span id="bgmText">GAMESHOW MUSIC: OFF</span>
+      </button>
+
+      <!-- Girl Voice Narrator Toggle -->
+      <button id="narratorToggleBtn" onclick="toggleNarratorVoice()" class="mc-button mc-button-green px-3 py-2 text-sm font-kids flex items-center space-x-1">
+        <span id="narratorIcon">👧</span> <span id="narratorText">GIRL VOICE: ON</span>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<!-- Main Area -->
+<main class="relative z-10 flex-grow max-w-7xl w-full mx-auto p-4 md:p-6">
+
+  <!-- HOME VIEW -->
+  <section id="view-home" class="space-y-8">
+    <div class="mc-panel p-6 md:p-8 text-center relative border-4 border-black">
+      <div class="relative z-10 max-w-3xl mx-auto space-y-4">
+        <div class="inline-block bg-yellow-400 text-black px-4 py-2 text-sm font-minecraft border-2 border-black">
+          👧 AI Girl Reading Buddy: Mia (Kinder & Grades 1–3)
+        </div>
+        <h2 class="font-minecraft text-xl md:text-3xl text-yellow-400 drop-shadow">
+          Welcome to Blocky Reading Hub!
+        </h2>
+        <p class="text-2xl font-kids text-stone-200 leading-relaxed">
+          "Every Child a Crafty Reader, Every Reader a Champion!" Explore Sunshine Plains (Grade 1), Oak Forest Village (Grade 2), and Blocky River Castle (Grade 3) with your 3D voxel villager avatar!
+        </p>
+        <div class="pt-4 flex flex-wrap justify-center gap-4">
+          <button onclick="playSFX('click'); switchView('villages')" class="mc-button mc-button-gold font-kids text-lg px-6 py-4">
+            🏘️ Visit Biomes
+          </button>
+          <button onclick="playSFX('click'); switchView('realms')" class="mc-button mc-button-green font-kids text-lg px-6 py-4">
+            🚀 Start Craft Quest
+          </button>
+          <button onclick="speakMia('Hi everyone! I am Mia, your friendly girl narrator! Welcome to our fun Minecraft reading game show! Let us build words together!', 'excited')" class="mc-button font-kids text-lg px-6 py-4 flex items-center space-x-2">
+            <span>🗣️</span> <span>Listen to Mia!</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Biomes Summary -->
+    <div>
+      <h3 class="font-minecraft text-lg text-yellow-400 mb-4 flex items-center space-x-2">
+        <span>📚</span> <span>Minecraft Reading Biomes</span>
+      </h3>
+      <div id="villages-summary-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+    </div>
+  </section>
+
+  <!-- VILLAGES EXPLORER VIEW -->
+  <section id="view-villages" class="hidden space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h2 class="font-minecraft text-xl text-yellow-400">3D Blocky Biome Explorer</h2>
+        <p class="text-xl font-kids text-stone-200">Select a biome to view walking 3D pixel avatars, structures, and reading objectives!</p>
+      </div>
+      <div id="village-tab-buttons" class="flex flex-wrap gap-2"></div>
+    </div>
+
+    <!-- Active Village Detail View -->
+    <div id="village-detail-card" class="mc-panel p-6 md:p-8 space-y-6 border-4 border-black"></div>
+  </section>
+
+  <!-- REALMS LIST VIEW -->
+  <section id="view-realms" class="hidden space-y-6">
+    <div class="flex items-center justify-between">
+      <h2 class="font-minecraft text-xl text-yellow-400">Choose Your Minecraft Quest</h2>
+      <button onclick="playSFX('click'); switchView('home')" class="mc-button text-sm font-kids px-4 py-2">
+        ← Back Home
+      </button>
+    </div>
+    <div id="realms-list-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </section>
+
+  <!-- GAME ACTIVITY ENGINE VIEW -->
+  <section id="view-game" class="hidden space-y-6">
+    <!-- Active Learner Selector Bar for Teachers -->
+    <div class="mc-panel bg-amber-900 border-4 border-black p-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <span id="active-learner-avatar-icon" class="text-3xl">🟩</span>
+        <div>
+          <p class="text-xs font-minecraft text-yellow-400">Active Minecraft Crafting Learner</p>
+          <h4 id="active-learner-display" class="font-kids text-2xl text-white">Steve (Grade 1 - Sunshine Plains)</h4>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <label class="text-sm font-kids text-stone-200">Switch Player:</label>
+        <select id="game-learner-selector" onchange="selectActiveLearner(this.value)" class="mc-panel-light text-black font-kids text-lg px-3 py-1 border-2 border-black focus:outline-none">
+        </select>
+      </div>
+    </div>
+
+    <div class="mc-panel p-4 flex flex-wrap items-center justify-between gap-4 border-4 border-black">
+      <button onclick="playSFX('click'); exitGame()" class="mc-button mc-button-red font-kids text-sm px-4 py-2">
+        ✖ Exit Quest
+      </button>
+
+      <div class="text-center">
+        <h3 id="game-realm-title" class="font-minecraft text-sm text-yellow-400">Alphabet Village</h3>
+        <p id="game-progress-text" class="text-xl font-kids text-stone-200">Item 1 of 10</p>
+      </div>
+
+      <div class="flex items-center space-x-6">
+        <div class="mc-panel p-2 flex items-center space-x-4 border-2 border-black">
+          <span class="text-xl">⭐ <span id="game-xp" class="font-minecraft text-xs text-yellow-400">0</span> XP</span>
+          <span class="text-xl">💎 <span id="game-coins" class="font-minecraft text-xs text-cyan-400">0</span></span>
+        </div>
+        
+        <div class="flex items-center space-x-1" id="hearts-container">
+          <span class="text-2xl heart-icon">❤️</span>
+          <span class="text-2xl heart-icon">❤️</span>
+          <span class="text-2xl heart-icon">❤️</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Question Card with Mia & Minecraft NPC -->
+    <div class="mc-panel p-6 md:p-8 space-y-6 border-4 border-black relative">
+      <!-- Mia Storyteller Banner -->
+      <div class="mc-panel bg-stone-800 p-3 px-5 flex items-center justify-between border-2 border-black">
+        <div class="flex items-center space-x-3">
+          <span class="text-3xl steve-avatar-anim">👧</span>
+          <div>
+            <h4 class="font-minecraft text-xs text-yellow-400">Girl Narrator Mia <span id="level-villager-badge" class="text-xs text-emerald-400 border border-emerald-400 px-2 py-0.5 ml-2">Biome Guide</span></h4>
+            <p id="level-villager-dialogue" class="text-xl font-kids text-stone-200">"Pick the right block answer!"</p>
+          </div>
+        </div>
+        <button onclick="cheerMia()" class="mc-button mc-button-gold text-sm font-kids px-3 py-2">
+          👋 High Five!
+        </button>
+      </div>
+
+      <div class="text-center space-y-4">
+        <div class="inline-flex items-center space-x-3 mc-panel bg-stone-900 border-2 border-yellow-400 px-6 py-4">
+          <span id="game-question-prompt" class="font-kids text-2xl md:text-3xl text-yellow-300">
+            Drag the correct letter sound block!
+          </span>
+          <button id="voicePromptBtn" onclick="readQuestionPrompt()" class="mc-button p-2 text-sm">
+            🔊
+          </button>
+        </div>
+        <div id="game-visual-cue" class="text-7xl py-2">🍎</div>
+      </div>
+
+      <!-- Drag Mode Area (Minecraft Crafting Table Theme) -->
+      <div id="drag-mode-container" class="space-y-8">
+        <div class="flex justify-center">
+          <div id="drop-target-box" class="drop-target w-52 h-52 md:w-60 md:h-60 mc-panel-light border-4 border-dashed border-stone-800 flex flex-col items-center justify-center p-4 relative">
+            <span class="text-stone-700 font-kids text-sm mb-2 uppercase">CRAFT SLOT</span>
+            <div id="drop-target-content" class="font-kids text-5xl font-bold text-stone-900">❓</div>
+          </div>
+        </div>
+
+        <div id="draggable-options-pool" class="flex flex-wrap justify-center gap-4 md:gap-6 pt-2"></div>
+      </div>
+
+      <!-- Hint Control -->
+      <div class="flex items-center justify-between pt-4 border-t-2 border-stone-800">
+        <button onclick="giveHint()" class="mc-button mc-button-gold text-sm font-kids px-4 py-2">
+          💡 Ask Mia for Hint
+        </button>
+        <p id="hint-text" class="text-2xl font-kids text-yellow-300 italic hidden"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEACHER DASHBOARD VIEW -->
+  <section id="view-dashboard" class="hidden space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h2 class="font-minecraft text-xl text-yellow-400">Teacher Analytics & Craft Monitor</h2>
+        <p class="text-xl font-kids text-stone-200">Track online blocky learners per biome, reading accuracy, WPM, and trigger class celebrations!</p>
+      </div>
+      
+      <div class="flex items-center space-x-3">
+        <!-- Trigger Class Achievement Festival -->
+        <button onclick="triggerClassFestival('Grade 1 - Sunshine Plains')" class="mc-button mc-button-gold font-kids text-sm px-4 py-3 flex items-center space-x-2">
+          <span>🎆</span> <span>Class Festival</span>
+        </button>
+
+        <!-- Excel Download Button -->
+        <button onclick="exportToExcel()" class="mc-button mc-button-green font-kids text-sm px-4 py-3 flex items-center space-x-2">
+          <span>📊</span> <span>Export (.xlsx)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Village Online Learner Stats -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="mc-panel p-5 border-l-8 border-yellow-400">
+        <div class="flex justify-between items-center">
+          <span class="text-3xl">🌻</span>
+          <span class="bg-yellow-500 text-black text-xs font-minecraft px-2 py-0.5">Grade 1</span>
+        </div>
+        <p class="text-xs font-minecraft text-stone-400 uppercase mt-2">Sunshine Plains</p>
+        <h4 id="dash-g1-online" class="font-minecraft text-xl text-yellow-400 mt-1">25 Online</h4>
+        <p class="text-xl font-kids text-emerald-400 mt-1">Phonics & Crafting Sounds</p>
+      </div>
+
+      <div class="mc-panel p-5 border-l-8 border-emerald-500">
+        <div class="flex justify-between items-center">
+          <span class="text-3xl">🌲</span>
+          <span class="bg-emerald-500 text-black text-xs font-minecraft px-2 py-0.5">Grade 2</span>
+        </div>
+        <p class="text-xs font-minecraft text-stone-400 uppercase mt-2">Oak Forest Biome</p>
+        <h4 id="dash-g2-online" class="font-minecraft text-xl text-yellow-400 mt-1">28 Online</h4>
+        <p class="text-xl font-kids text-emerald-400 mt-1">CVC & Sight Word Mining</p>
+      </div>
+
+      <div class="mc-panel p-5 border-l-8 border-cyan-500">
+        <div class="flex justify-between items-center">
+          <span class="text-3xl">🏰</span>
+          <span class="bg-cyan-500 text-black text-xs font-minecraft px-2 py-0.5">Grade 3</span>
+        </div>
+        <p class="text-xs font-minecraft text-stone-400 uppercase mt-2">River Castle Realm</p>
+        <h4 id="dash-g3-online" class="font-minecraft text-xl text-yellow-400 mt-1">30 Online</h4>
+        <p class="text-xl font-kids text-cyan-400 mt-1">Independent Castle Stories</p>
+      </div>
+    </div>
+
+    <!-- TEACHER INPUT REGISTRATION FORM -->
+    <div class="mc-panel p-6 border-4 border-black">
+      <h3 class="font-minecraft text-sm text-yellow-400 mb-4 flex items-center space-x-2">
+        <span>🧑‍🌾</span> <span>Register Minecraft Learner (Spawns 3D Walking Voxel Avatar)</span>
+      </h3>
+      <form id="add-learner-form" onsubmit="handleLearnerSubmit(event)" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div>
+          <label class="block text-sm font-kids text-stone-200 mb-1">Full Name</label>
+          <input type="text" id="input-name" placeholder="Steve" required class="mc-panel-light w-full px-3 py-2 font-kids text-xl text-black border-2 border-black focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-kids text-stone-200 mb-1">Grade Level</label>
+          <select id="input-grade" required class="mc-panel-light w-full px-3 py-2 font-kids text-xl text-black border-2 border-black focus:outline-none">
+            <option value="Grade 1">Grade 1 (Sunshine Plains)</option>
+            <option value="Grade 2">Grade 2 (Oak Forest)</option>
+            <option value="Grade 3">Grade 3 (River Castle)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-kids text-stone-200 mb-1">Section</label>
+          <input type="text" id="input-section" placeholder="Diamond" required class="mc-panel-light w-full px-3 py-2 font-kids text-xl text-black border-2 border-black focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-kids text-stone-200 mb-1">School Year</label>
+          <input type="text" id="input-sy" value="2026–2027" required class="mc-panel-light w-full px-3 py-2 font-kids text-xl text-black border-2 border-black focus:outline-none">
+        </div>
+        <div class="flex items-end">
+          <button type="submit" class="mc-button mc-button-green w-full font-kids text-base py-3">
+            ➕ Spawn Avatar
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Analytics Dashboard Table -->
+    <div class="mc-panel p-6 border-4 border-black space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-minecraft text-sm text-yellow-400">Learner Crafting Roster & Live Stats</h3>
+        <span class="text-xs font-minecraft text-stone-400">Live World Database</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table id="learners-table" class="w-full text-left border-collapse font-kids text-xl">
+          <thead>
+            <tr class="border-b-2 border-stone-700 text-xs font-minecraft text-yellow-400">
+              <th class="py-3 px-4">Learner & Pixel Avatar</th>
+              <th class="py-3 px-4">Grade & Biome</th>
+              <th class="py-3 px-4">Accuracy</th>
+              <th class="py-3 px-4">WPM</th>
+              <th class="py-3 px-4">Comprehension</th>
+              <th class="py-3 px-4">Inventory Unlocks</th>
+              <th class="py-3 px-4">Action</th>
+            </tr>
+          </thead>
+          <tbody id="roster-tbody" class="divide-y divide-stone-800"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- PRINTABLE CERTIFICATE MODAL -->
+<div id="certificate-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+  <div class="mc-panel-light max-w-4xl w-full p-8 shadow-2xl relative border-8 border-black text-black font-kids">
+    <button onclick="closeCertificateModal()" class="no-print absolute top-4 right-4 mc-button mc-button-red text-xs px-3 py-2 font-minecraft">✖</button>
+    
+    <div id="printable-certificate-area" class="text-center space-y-4 border-4 border-black p-8 bg-amber-50">
+      <div class="flex justify-between items-center px-4">
+        <div class="text-left">
+          <p class="text-xs font-minecraft">DEPARTMENT OF EDUCATION</p>
+          <p class="text-xl font-kids font-bold">Region III • Division of Mabalacat City</p>
+        </div>
+        <div class="w-16 h-16 bg-amber-800 border-2 border-black flex items-center justify-center text-2xl text-yellow-400 font-minecraft">
+          🏰
+        </div>
+      </div>
+
+      <div class="py-4 space-y-2">
+        <p class="font-minecraft text-xl text-amber-800 uppercase">Minecraft Crafting Certificate</p>
+        <p class="text-xl font-kids italic">This is awarded to Master Craftsperson</p>
+        <h2 id="cert-student-name" class="font-kids text-3xl font-bold text-emerald-800 border-b-4 border-black inline-block px-8 py-1">Steve</h2>
+        <p id="cert-student-section" class="text-xl font-kids font-bold">Grade 1 - Diamond (SY 2026–2027)</p>
+      </div>
+
+      <p class="text-2xl font-kids max-w-2xl mx-auto">
+        For outstanding literacy block construction, active biome questing, and successfully completing 10-Item Quests in Key Stage 1 Reading Adventure!
+      </p>
+
+      <div id="cert-realms-container" class="flex flex-wrap justify-center gap-2 py-2"></div>
+
+      <p class="text-base font-kids italic">Dau Elementary School • Minecraft Reading Adventure Program</p>
+
+      <div class="pt-8 flex justify-between items-end px-12 text-center font-kids text-xl font-bold">
+        <div class="border-t-2 border-black w-40 pt-1">
+          <p id="cert-adviser-name">Class Adviser</p>
+        </div>
+        <div class="text-3xl">🏅</div>
+        <div class="border-t-2 border-black w-40 pt-1">
+          <p id="cert-principal-name">School Principal</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="no-print mt-6 flex justify-end space-x-3">
+      <button onclick="window.print()" class="mc-button mc-button-green text-sm font-kids px-6 py-3 flex items-center space-x-2">
+        <span>🖨️</span> <span>Print Certificate</span>
+      </button>
+      <button onclick="closeCertificateModal()" class="mc-button text-sm font-kids px-4 py-3">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="relative z-10 bg-stone-900 text-stone-300 py-6 border-t-4 border-black mt-12">
+  <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
+    <p class="font-minecraft text-xs text-yellow-400">Dau Elementary School • Division of Mabalacat City</p>
+    <p class="text-xl font-kids text-emerald-400">
+      Minecraft Reading Adventure Hub © 2026–2027 • Block-by-Block Reading Excellence
+    </p>
+  </div>
+</footer>
+
+<script>
+// --- GLOBAL VILLAGES & REALMS DATA ---
+const VILLAGES_DATA = [
+  {
+    id: 'g1_sunshine',
+    grade: 'Grade 1',
+    name: 'Sunshine Plains',
+    theme: 'Phonics & Basic Sound Crafting',
+    icon: '🌻',
+    landmarks: ['Oak Village House', 'Wheat Field', 'Crafting Bench', 'Sound Well', 'Beginner Mine'],
+    avatarType: 'Pixel Steve',
+    unlockables: ['Wooden Sword', 'Leather Armor', 'Pet Dog', 'Alphabet Ingot'],
+    currentDestination: 'Crafting Bench',
+    colorHex: 0x5c8e32
+  },
+  {
+    id: 'g2_forest',
+    grade: 'Grade 2',
+    name: 'Oak Forest Biome',
+    theme: 'CVC Words & Word Mining',
+    icon: '🌲',
+    landmarks: ['Woodcutter Hut', 'Canopy Treehouse', 'Word Cavern', 'Log Bridge', 'Campfire'],
+    avatarType: 'Pixel Alex',
+    unlockables: ['Iron Pickaxe', 'Chainmail Armor', 'Pet Cat', 'CVC Gem'],
+    currentDestination: 'Word Cavern',
+    colorHex: 0x22c55e
+  },
+  {
+    id: 'g3_river',
+    grade: 'Grade 3',
+    name: 'Blocky River Castle',
+    theme: 'Independent Story Comprehension',
+    icon: '🏰',
+    landmarks: ['Stone Fortress', 'Lighthouse Tower', 'Royal Library', 'Nether Portal Gate', 'Champion Arena'],
+    avatarType: 'Diamond Knight',
+    unlockables: ['Diamond Armor', 'Golden Crown', 'Ender Dragon Wings', 'Master Banner'],
+    currentDestination: 'Royal Library',
+    colorHex: 0x3b82f6
+  }
+];
+
+const REALMS_DATA = [
+  { id: 'alphabet', title: 'Alphabet Village', level: 'L', icon: '🔤', desc: 'Letter Sound Crafting', villagerName: 'Villager Blacksmith', villagerAvatar: '👨‍🌾', villagerGreeting: 'Help me craft letters on the Anvil!' },
+  { id: 'blend', title: 'Blend Bridge', level: 'CV', icon: '🌉', desc: 'Consonant-Vowel Sound Blending', villagerName: 'Bridge Keeper', villagerAvatar: '💂', villagerGreeting: 'Blend your sounds to build a bridge across the river!' },
+  { id: 'cvc', title: 'Word Forest', level: 'CVC', icon: '🌲', desc: 'Reading CVC Word Blocks', villagerName: 'Lumberjack Alex', villagerAvatar: '👩‍🌾', villagerGreeting: 'Chop down 3-letter CVC wood blocks with me!' },
+  { id: 'sight', title: 'Sight Word City', level: 'SW', icon: '⭐', desc: 'High-Frequency Sight Word Mining', villagerName: 'Mine Cart Master', villagerAvatar: '🧑‍🏭', villagerGreeting: 'Mine sight word gems deep in the mine shaft!' },
+  { id: 'sentence', title: 'Sentence Town', level: 'C', icon: '🏘️', desc: 'Building Sentence Walls', villagerName: 'Mason Steve', villagerAvatar: '🧱', villagerGreeting: 'Lay sentence bricks to construct complete walls!' },
+  { id: 'instructional', title: 'Comprehension Mountain', level: 'B', icon: '📚', desc: 'Reading Passages & Quests', villagerName: 'Wizard Scholar', villagerAvatar: '🧙‍♂️', villagerGreeting: 'Ascend the peak to decode magical passage scrolls!' },
+  { id: 'independent', title: 'Reader Castle', level: 'A', icon: '🏰', desc: 'Independent Castle Story Quests', villagerName: 'King Arthur Voxel', villagerAvatar: '🤴', villagerGreeting: 'Welcome champion! Master story quests to earn the Reader Crown!' }
+];
+
+let LEARNERS_ROSTER = [
+  { id: 'learner_1', name: 'Steve', grade: 'Grade 1', village: 'Sunshine Plains', section: 'Diamond', sy: '2026–2027', xp: 450, coins: 120, accuracy: 96, wpm: 42, compScore: 92, avatarIcon: '🟩', unlocks: ['Wooden Pickaxe', 'Phonics Ingot'] },
+  { id: 'learner_2', name: 'Alex', grade: 'Grade 2', village: 'Oak Forest Biome', section: 'Emerald', sy: '2026–2027', xp: 680, coins: 210, accuracy: 98, wpm: 65, compScore: 95, avatarIcon: '🌲', unlocks: ['Iron Armor', 'Word Gem'] },
+  { id: 'learner_3', name: 'Hero', grade: 'Grade 3', village: 'Blocky River Castle', section: 'Redstone', sy: '2026–2027', xp: 950, coins: 340, accuracy: 99, wpm: 88, compScore: 97, avatarIcon: '🏰', unlocks: ['Diamond Sword', 'Dragon Wings'] }
+];
+
+// --- SHUFFLE ARRAY HELPER FUNCTION ---
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+// --- GAME ITEMS DATABASE (10 ITEMS PER ACTIVITY) ---
+const GAME_ITEMS_DATABASE = {
+  alphabet: [
+    { prompt: "Drag the letter block for the initial sound of Apple", visual: "🍎", answer: "A", choices: ["A", "B", "C", "D"], hint: "Apple starts with letter A!" },
+    { prompt: "Drag the letter block for the initial sound of Ball", visual: "⚽", answer: "B", choices: ["A", "B", "P", "D"], hint: "Ball starts with letter B!" },
+    { prompt: "Drag the letter block for the initial sound of Cat", visual: "🐱", answer: "C", choices: ["K", "C", "S", "T"], hint: "Cat starts with letter C!" },
+    { prompt: "Drag the letter block for the initial sound of Dog", visual: "🐶", answer: "D", choices: ["B", "P", "D", "G"], hint: "Dog starts with letter D!" },
+    { prompt: "Drag the letter block for the initial sound of Elephant", visual: "🐘", answer: "E", choices: ["E", "I", "A", "U"], hint: "Elephant starts with letter E!" },
+    { prompt: "Drag the letter block for the initial sound of Fish", visual: "🐟", answer: "F", choices: ["F", "V", "P", "T"], hint: "Fish starts with letter F!" },
+    { prompt: "Drag the letter block for the initial sound of Goat", visual: "🐐", answer: "G", choices: ["J", "G", "C", "K"], hint: "Goat starts with letter G!" },
+    { prompt: "Drag the letter block for the initial sound of House", visual: "🏠", answer: "H", choices: ["H", "A", "E", "O"], hint: "House starts with letter H!" },
+    { prompt: "Drag the letter block for the initial sound of Igloo", visual: "🧊", answer: "I", choices: ["E", "I", "U", "O"], hint: "Igloo starts with letter I!" },
+    { prompt: "Drag the letter block for the initial sound of Jump", visual: "👟", answer: "J", choices: ["G", "J", "Y", "Z"], hint: "Jump starts with letter J!" }
+  ],
+  blend: [
+    { prompt: "Blend the sound blocks: b and a makes...", visual: "🐝", answer: "ba", choices: ["ba", "be", "bi", "bo"], hint: "b + a = ba!" },
+    { prompt: "Blend the sound blocks: c and a makes...", visual: "🐱", answer: "ca", choices: ["ca", "co", "cu", "ce"], hint: "c + a = ca!" },
+    { prompt: "Blend the sound blocks: d and o makes...", visual: "🐶", answer: "do", choices: ["da", "do", "du", "de"], hint: "d + o = do!" },
+    { prompt: "Blend the sound blocks: f and i makes...", visual: "🐟", answer: "fi", choices: ["fa", "fe", "fi", "fo"], hint: "f + i = fi!" },
+    { prompt: "Blend the sound blocks: m and u makes...", visual: "🥛", answer: "mu", choices: ["ma", "me", "mi", "mu"], hint: "m + u = mu!" },
+    { prompt: "Blend the sound blocks: p and e makes...", visual: "🖊️", answer: "pe", choices: ["pa", "pe", "pi", "po"], hint: "p + e = pe!" },
+    { prompt: "Blend the sound blocks: r and a makes...", visual: "🐀", answer: "ra", choices: ["ra", "re", "ri", "ro"], hint: "r + a = ra!" },
+    { prompt: "Blend the sound blocks: s and u makes...", visual: "☀️", answer: "su", choices: ["sa", "se", "si", "su"], hint: "s + u = su!" },
+    { prompt: "Blend the sound blocks: t and o makes...", visual: "🧸", answer: "to", choices: ["ta", "te", "ti", "to"], hint: "t + o = to!" },
+    { prompt: "Blend the sound blocks: z and i makes...", visual: "⚡", answer: "zi", choices: ["za", "ze", "zi", "zo"], hint: "z + i = zi!" }
+  ],
+  cvc: [
+    { prompt: "Mined CVC Block: Find the word for this cute pet!", visual: "🐱", answer: "cat", choices: ["cat", "bat", "rat", "hat"], hint: "c - a - t!" },
+    { prompt: "Mined CVC Block: Find the word for this cozy cap!", visual: "🧢", answer: "cap", choices: ["map", "cap", "tap", "nap"], hint: "c - a - p!" },
+    { prompt: "Mined CVC Block: Find the word for this friendly dog!", visual: "🐶", answer: "dog", choices: ["fog", "log", "dog", "hog"], hint: "d - o - g!" },
+    { prompt: "Mined CVC Block: Find the word for this pen!", visual: "🖊️", answer: "pen", choices: ["pen", "ten", "hen", "den"], hint: "p - e - n!" },
+    { prompt: "Mined CVC Block: Find the word for this bus!", visual: "🚌", answer: "bus", choices: ["bus", "cup", "bug", "sun"], hint: "b - u - s!" },
+    { prompt: "Mined CVC Block: Find the word for this pig!", visual: "🐷", answer: "pig", choices: ["pig", "dig", "fig", "wig"], hint: "p - i - g!" },
+    { prompt: "Mined CVC Block: Find the word for this sun!", visual: "☀️", answer: "sun", choices: ["sun", "fun", "run", "bun"], hint: "s - u - n!" },
+    { prompt: "Mined CVC Block: Find the word for this box!", visual: "📦", answer: "box", choices: ["box", "fox", "mix", "six"], hint: "b - o - x!" },
+    { prompt: "Mined CVC Block: Find the word for this bed!", visual: "🛏️", answer: "bed", choices: ["bed", "red", "fed", "led"], hint: "b - e - d!" },
+    { prompt: "Mined CVC Block: Find the word for this cup!", visual: "☕", answer: "cup", choices: ["cup", "pup", "cap", "map"], hint: "c - u - p!" }
+  ],
+  sight: [
+    { prompt: "Identify the high-frequency sight word block!", visual: "⭐", answer: "the", choices: ["the", "and", "you", "for"], hint: "Starts with T H!" },
+    { prompt: "Find the sight word block meaning in this place!", visual: "📍", answer: "here", choices: ["here", "there", "where", "when"], hint: "H - E - R - E!" },
+    { prompt: "Find the sight word block that connects ideas!", visual: "➕", answer: "and", choices: ["but", "and", "for", "nor"], hint: "A - N - D!" },
+    { prompt: "Find the sight word block for a quantity!", visual: "🔹", answer: "some", choices: ["some", "more", "many", "all"], hint: "S - O - M - E!" },
+    { prompt: "Find the sight word block for ability!", visual: "💪", answer: "can", choices: ["can", "will", "may", "must"], hint: "C - A - N!" },
+    { prompt: "Find the sight word block for greeting!", visual: "👋", answer: "said", choices: ["said", "like", "look", "come"], hint: "S - A - I - D!" },
+    { prompt: "Find the sight word block for location!", visual: "🗺️", answer: "where", choices: ["where", "there", "here", "when"], hint: "W - H - E - R - E!" },
+    { prompt: "Find the sight word block for motion!", visual: "🚶", answer: "go", choices: ["go", "no", "so", "to"], hint: "G - O!" },
+    { prompt: "Find the sight word block for yourself!", visual: "🧒", answer: "my", choices: ["my", "by", "he", "we"], hint: "M - Y!" },
+    { prompt: "Find the sight word block for seeing!", visual: "👀", answer: "see", choices: ["see", "saw", "say", "sit"], hint: "S - E - E!" }
+  ],
+  sentence: [
+    { prompt: "Complete the sentence wall: The cat sat on the...", visual: "🛋️", answer: "mat", choices: ["mat", "hat", "bat", "rat"], hint: "Rhymes with cat!" },
+    { prompt: "Complete the sentence wall: The sun is very...", visual: "☀️", answer: "hot", choices: ["hot", "cold", "wet", "dry"], hint: "Opposite of cold!" },
+    { prompt: "Complete the sentence wall: I see a big red...", visual: "🍎", answer: "apple", choices: ["apple", "banana", "grape", "melon"], hint: "Red fruit!" },
+    { prompt: "Complete the sentence wall: The dog can run...", visual: "🐕", answer: "fast", choices: ["fast", "high", "deep", "slow"], hint: "Quick motion!" },
+    { prompt: "Complete the sentence wall: She has a sweet blue...", visual: "🎈", answer: "balloon", choices: ["balloon", "car", "book", "shoe"], hint: "Floats in sky!" },
+    { prompt: "Complete the sentence wall: We swim in the cool...", visual: "🏊", answer: "water", choices: ["water", "fire", "sand", "grass"], hint: "Liquid in pool!" },
+    { prompt: "Complete the sentence wall: The bird flies high in the...", visual: "🦅", answer: "sky", choices: ["sky", "mud", "cave", "rock"], hint: "Up above!" },
+    { prompt: "Complete the sentence wall: He likes to read a good...", visual: "📖", answer: "book", choices: ["book", "stone", "stick", "door"], hint: "Full of stories!" },
+    { prompt: "Complete the sentence wall: Stars shine at...", visual: "🌙", answer: "night", choices: ["night", "noon", "dawn", "dusk"], hint: "When dark out!" },
+    { prompt: "Complete the sentence wall: Put your hat on your...", visual: "🎩", answer: "head", choices: ["head", "foot", "hand", "knee"], hint: "Top of body!" }
+  ],
+  instructional: [
+    { prompt: "Quest Passage: Tim has a red hat. The hat is small. What color is Tim's hat?", visual: "🎩", answer: "red", choices: ["red", "blue", "green", "yellow"], hint: "Look at the color mentioned!" },
+    { prompt: "Quest Passage: Ana likes to read books under the big oak tree. Where does Ana read?", visual: "🌳", answer: "under the tree", choices: ["under the tree", "in the car", "at the store", "in bed"], hint: "Check under leaves!" },
+    { prompt: "Quest Passage: The yellow duck swims in the pond. Who is swimming?", visual: "🦆", answer: "yellow duck", choices: ["yellow duck", "green frog", "little fish", "white swan"], hint: "It quacks!" },
+    { prompt: "Quest Passage: Ben eats a sweet red apple for breakfast. What does Ben eat?", visual: "🍎", answer: "apple", choices: ["apple", "bread", "milk", "egg"], hint: "Fruit!" },
+    { prompt: "Quest Passage: The star shines bright in the night sky. When does the star shine?", visual: "🌙", answer: "at night", choices: ["at night", "in morning", "at noon", "at lunch"], hint: "At night!" },
+    { prompt: "Quest Passage: Sam built a stone wall with 5 blocks. How many blocks were used?", visual: "🧱", answer: "5 blocks", choices: ["5 blocks", "2 blocks", "10 blocks", "1 block"], hint: "Count 5!" },
+    { prompt: "Quest Passage: A green frog jumped into the cool river. Where did the frog jump?", visual: "🐸", answer: "into the river", choices: ["into the river", "on a house", "in a tree", "in the sky"], hint: "Into water!" },
+    { prompt: "Quest Passage: May drinks cold milk in a blue glass. What color is the glass?", visual: "🥛", answer: "blue", choices: ["blue", "red", "green", "white"], hint: "Blue!" },
+    { prompt: "Quest Passage: The red minecart rolls down the tracks fast. What is rolling?", visual: "🛒", answer: "minecart", choices: ["minecart", "boat", "horse", "dragon"], hint: "Minecart!" },
+    { prompt: "Quest Passage: Leo found a shiny gold key in the chest. What did Leo find?", visual: "🗝️", answer: "gold key", choices: ["gold key", "wooden stick", "iron bar", "stone"], hint: "Gold key!" }
+  ],
+  independent: [
+    { prompt: "Castle Story: Lito found a lost puppy near the school gate. He brought it to the guard. The owner came and thanked Lito. What is the main message?", visual: "🐕", answer: "Being helpful", choices: ["Being helpful", "Playing games", "Running fast", "Buying food"], hint: "He helped!" },
+    { prompt: "Castle Story: Maya worked hard on her reading project every day. She earned a gold star from her teacher. Why did Maya get a star?", visual: "⭐", answer: "Hard work", choices: ["Hard work", "Sleeping late", "Being noisy", "Losing books"], hint: "Hard work!" },
+    { prompt: "FIXED ITEM 3 - Castle Story: The children planted seeds in the school garden. They watered them daily until green sprouts grew. What helped the seeds grow?", visual: "🌱", answer: "Water and care", choices: ["Water and care", "Dark rooms", "Cold ice", "Heavy wind"], hint: "Daily water and care!" },
+    { prompt: "Castle Story: Leo shared his lunch sandwich with a friend who forgot his food. What character trait does Leo show?", visual: "🥪", answer: "Generosity", choices: ["Generosity", "Bravery", "Curiosity", "Honesty"], hint: "Generosity!" },
+    { prompt: "Castle Story: Berto read 10 pages every night before sleeping. Soon he finished the whole book! How did Berto finish the book?", visual: "📖", answer: "Daily practice", choices: ["Daily practice", "Reading once", "Skipping pages", "Guessing words"], hint: "Daily practice!" },
+    { prompt: "Castle Story: The knights built a tall stone tower to defend the realm. They worked together as a team. How did they succeed?", visual: "🏰", answer: "Teamwork", choices: ["Teamwork", "Fighting", "Running", "Sleeping"], hint: "Working together!" },
+    { prompt: "Castle Story: Sinta lost her book in the library. She searched carefully until she found it on the table. How did Sinta find it?", visual: "🔍", answer: "Searching carefully", choices: ["Searching carefully", "Crying", "Giving up", "Leaving"], hint: "Searching carefully!" },
+    { prompt: "Castle Story: A little bird built its nest with soft twigs and leaves to protect its eggs. Why did it make the nest?", visual: "🪹", answer: "To protect eggs", choices: ["To protect eggs", "To play", "To fly away", "To hide food"], hint: "Protect eggs!" },
+    { prompt: "Castle Story: Carlos practiced spelling every afternoon until he got 100% on his quiz. What lesson does this teach?", visual: "📝", answer: "Practice brings success", choices: ["Practice brings success", "Speed is best", "Luck is enough", "Never try"], hint: "Practice!" },
+    { prompt: "Castle Story: The king rewarded all students who read 10 books with a golden trophy. Why were they awarded?", visual: "🏆", answer: "Reading books", choices: ["Reading books", "Running fast", "Drawing pictures", "Singing songs"], hint: "Reading 10 books!" }
+  ]
+};
+
+// --- GAME STATE VARIABLES ---
+let activeLearner = LEARNERS_ROSTER[0];
+let currentRealmId = 'alphabet';
+let currentItemIndex = 0;
+let currentXP = 0;
+let currentCoins = 0;
+let currentHearts = 3;
+let activeDragItem = null;
+let isNarratorVoiceEnabled = true;
+
+// --- AUDIO SYNTHESIZER ENGINE (KIDS GAMESHOW BACKGROUND MUSIC) ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let isGameshowMusicActive = false;
+let musicTimer = null;
+let noteIndex = 0;
+
+// Upbeat Bouncy Kids Gameshow Tune Loop
+const gameshowNotes = [
+  523.25, 659.25, 783.99, 1046.50, 783.99, 659.25,
+  587.33, 698.46, 880.00, 1174.66, 880.00, 698.46,
+  659.25, 783.99, 987.77, 1318.51, 987.77, 783.99,
+  698.46, 880.00, 1046.50, 1396.91, 1046.50, 880.00
+];
+
+function playGameshowBGMStep() {
+  if (!isGameshowMusicActive) return;
+  const note = gameshowNotes[noteIndex % gameshowNotes.length];
+  noteIndex++;
+
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = 'triangle'; // Bouncy cheerful sound
+  osc.frequency.setValueAtTime(note, audioCtx.currentTime);
+
+  gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + 0.05);
+  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.22);
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.23);
+}
+
+function playSFX(type) {
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  if (type === 'click') {
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.05);
+  } else if (type === 'correct') {
+    // Upbeat Gameshow Ding Ding
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1174.66, audioCtx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.22);
+  } else if (type === 'wrong') {
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+    osc.frequency.linearRampToValueAtTime(120, audioCtx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.2);
+  } else if (type === 'fanfare') {
+    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+  }
+}
+
+function togglePlaytimeBGM() {
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  
+  isGameshowMusicActive = !isGameshowMusicActive;
+  const btnText = document.getElementById('bgmText');
+  const btnIcon = document.getElementById('bgmIcon');
+  
+  if (isGameshowMusicActive) {
+    btnText.innerText = "GAMESHOW MUSIC: ON";
+    btnIcon.innerText = "🎶";
+    musicTimer = setInterval(playGameshowBGMStep, 240);
+  } else {
+    btnText.innerText = "GAMESHOW MUSIC: OFF";
+    btnIcon.innerText = "🎵";
+    clearInterval(musicTimer);
+  }
+}
+
+function toggleNarratorVoice() {
+  isNarratorVoiceEnabled = !isNarratorVoiceEnabled;
+  const icon = document.getElementById('narratorIcon');
+  const text = document.getElementById('narratorText');
+
+  if (isNarratorVoiceEnabled) {
+    icon.textContent = '👧';
+    text.textContent = 'GIRL VOICE: ON';
+    playSFX('click');
+    speakMia("Girl voice is ready!", "excited");
+  } else {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    icon.textContent = '🔇';
+    text.textContent = 'GIRL VOICE: OFF';
+    playSFX('click');
+  }
+}
+
+function sanitizeForSpeech(rawText) {
+  if (!rawText) return '';
+  return rawText.replace(/[\/\\#@$%^&*()_\-+=\[\]{}|<>]/g, ' ').replace(/['"’`:]/g, '').trim();
+}
+
+// --- GIRL NARRATOR VOICE ENGINE ---
+function speakMia(text, emotion = 'cheerful') {
+  if (!isNarratorVoiceEnabled || !('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+
+  const cleanText = sanitizeForSpeech(text);
+  if (!cleanText) return;
+
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  const voices = window.speechSynthesis.getVoices();
+  
+  // Explicitly select Girl/Female English voices
+  const girlVoice = voices.find(v => 
+    v.lang.startsWith('en') && (
+      v.name.includes('Samantha') || 
+      v.name.includes('Victoria') || 
+      v.name.includes('Zira') ||
+      v.name.includes('Girl') ||
+      v.name.includes('Karen') ||
+      v.name.includes('Fiona') ||
+      v.name.includes('Google US English')
+    )
+  ) || voices.find(v => v.lang.startsWith('en'));
+
+  if (girlVoice) utterance.voice = girlVoice;
+  utterance.pitch = 1.45; // Higher pitch for cheerful girl voice
+  utterance.rate = 0.90;  // Slightly relaxed speed for kindergarten comprehension
+
+  window.speechSynthesis.speak(utterance);
+}
+
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+}
+
+// --- VIEW NAVIGATION ENGINE ---
+function switchView(viewName) {
+  ['home', 'villages', 'realms', 'game', 'dashboard'].forEach(v => {
+    document.getElementById(`view-${v}`).classList.add('hidden');
+  });
+  document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+  if (viewName === 'home') renderHomeSummary();
+  if (viewName === 'villages') renderVillagesView();
+  if (viewName === 'realms') renderRealmsList();
+  if (viewName === 'dashboard') renderDashboardRoster();
+}
+
+// --- RENDER HOME SUMMARY ---
+function renderHomeSummary() {
+  const container = document.getElementById('villages-summary-grid');
+  container.innerHTML = VILLAGES_DATA.map(v => `
+    <div class="mc-panel p-5 space-y-3 border-t-8 border-yellow-400">
+      <div class="flex items-center justify-between">
+        <span class="text-3xl">${v.icon}</span>
+        <span class="bg-yellow-500 text-black font-minecraft text-xs px-2 py-0.5">${v.grade}</span>
+      </div>
+      <h4 class="font-minecraft text-sm text-yellow-400">${v.name}</h4>
+      <p class="text-xl font-kids text-stone-200">${v.theme}</p>
+      <div class="pt-2 flex justify-between items-center border-t-2 border-stone-800 text-sm">
+        <span>📍 ${v.landmarks.length} Landmarks</span>
+        <button onclick="switchView('villages'); selectVillageTab('${v.id}')" class="text-yellow-400 hover:underline font-minecraft text-xs">Explore →</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// --- RENDER VILLAGES VIEW ---
+let activeVillageId = 'g1_sunshine';
+function renderVillagesView() {
+  const tabContainer = document.getElementById('village-tab-buttons');
+  tabContainer.innerHTML = VILLAGES_DATA.map(v => `
+    <button onclick="selectVillageTab('${v.id}')" class="mc-button text-xs font-minecraft px-3 py-2 ${activeVillageId === v.id ? 'mc-button-gold' : ''}">
+      ${v.icon} ${v.name}
+    </button>
+  `).join('');
+
+  const village = VILLAGES_DATA.find(v => v.id === activeVillageId);
+  const detailContainer = document.getElementById('village-detail-card');
+  detailContainer.innerHTML = `
+    <div class="mc-panel bg-stone-900 p-6 flex flex-wrap justify-between items-center gap-4 border-2 border-yellow-400">
+      <div>
+        <span class="bg-yellow-500 text-black font-minecraft text-xs px-2 py-0.5">${village.grade}</span>
+        <h3 class="font-minecraft text-xl text-yellow-400 mt-2">${village.name}</h3>
+        <p class="text-xl font-kids text-stone-200">${village.theme} • Guided by Walking Pixel Avatar</p>
+      </div>
+      <button onclick="speakMia('Welcome to ${village.name}! Explore blocky literacy points!', 'excited')" class="mc-button text-xs font-minecraft px-4 py-2">
+        🗣️ Hear Biome Tour
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="space-y-2">
+        <h4 class="font-minecraft text-xs text-yellow-400">📍 Biome Landmarks</h4>
+        <ul class="space-y-1 font-kids text-xl text-stone-200">
+          ${village.landmarks.map(l => `<li class="mc-panel p-2">🧱 ${l}</li>`).join('')}
+        </ul>
+      </div>
+
+      <div class="space-y-2">
+        <h4 class="font-minecraft text-xs text-yellow-400">🎁 Craft Inventory</h4>
+        <ul class="space-y-1 font-kids text-xl text-stone-200">
+          ${village.unlockables.map(u => `<li class="mc-panel p-2">💎 ${u}</li>`).join('')}
+        </ul>
+      </div>
+
+      <div class="space-y-2">
+        <h4 class="font-minecraft text-xs text-yellow-400">🚶 Pixel Avatar Status</h4>
+        <div class="mc-panel p-4 font-kids text-xl space-y-2">
+          <p>Avatar: <span class="text-yellow-400 font-bold">${village.avatarType}</span></p>
+          <p>Destination: <span class="text-emerald-400 font-bold">${village.currentDestination}</span></p>
+          <button onclick="switchView('realms')" class="mc-button mc-button-green w-full font-kids text-base py-3 mt-2">
+            🚀 Launch Biome Quests
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function selectVillageTab(id) {
+  activeVillageId = id;
+  renderVillagesView();
+  if (window.switch3DVillageTheme) window.switch3DVillageTheme(id);
+}
+
+// --- RENDER REALMS LIST VIEW ---
+function renderRealmsList() {
+  const container = document.getElementById('realms-list-container');
+  container.innerHTML = REALMS_DATA.map(r => `
+    <div class="mc-panel p-5 space-y-4 border-2 border-stone-800 hover:border-yellow-400 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-3xl">${r.icon}</span>
+          <span class="bg-yellow-500 text-black font-minecraft text-xs px-2 py-0.5">Level ${r.level}</span>
+        </div>
+        <h4 class="font-minecraft text-xs text-yellow-400">${r.title}</h4>
+        <p class="text-xl font-kids text-stone-200 mt-1">${r.desc}</p>
+        <div class="mt-3 mc-panel p-2 flex items-center space-x-2">
+          <span class="text-2xl">${r.villagerAvatar}</span>
+          <div>
+            <p class="text-xs font-minecraft text-yellow-500">Biome Guide</p>
+            <p class="text-xl font-kids text-stone-200">${r.villagerName}</p>
+          </div>
+        </div>
+      </div>
+      <button onclick="startRealmQuest('${r.id}')" class="mc-button mc-button-green w-full font-kids text-base py-3 mt-4">
+        Start Quest 🚀 (10 Items)
+      </button>
+    </div>
+  `).join('');
+}
+
+// --- LOCAL STORAGE ENGINE ---
+function saveLearnersToStorage() {
+  try {
+    localStorage.setItem("dau_hub_learners_mc", JSON.stringify(LEARNERS_ROSTER));
+    if (activeLearner) {
+      localStorage.setItem("dau_hub_active_learner_id_mc", activeLearner.id);
+    }
+  } catch (err) {
+    console.warn("Could not save to localStorage:", err);
+  }
+}
+
+function loadLearnersFromStorage() {
+  try {
+    const saved = localStorage.getItem("dau_hub_learners_mc");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) LEARNERS_ROSTER = parsed;
+    }
+    const savedId = localStorage.getItem("dau_hub_active_learner_id_mc");
+    if (savedId && LEARNERS_ROSTER.length > 0) {
+      const found = LEARNERS_ROSTER.find(l => l.id == savedId);
+      activeLearner = found || LEARNERS_ROSTER[0];
+    }
+  } catch (err) {
+    console.warn("Could not load from localStorage:", err);
+  }
+}
+
+function populateLearnerSelector() {
+  const selector = document.getElementById('game-learner-selector');
+  if (!selector) return;
+  selector.innerHTML = LEARNERS_ROSTER.map((l, idx) => `
+    <option value="${idx}" ${activeLearner && activeLearner.id === l.id ? 'selected' : ''}>
+      ${l.name} (${l.grade})
+    </option>
+  `).join('');
+}
+
+function selectActiveLearner(index) {
+  if (index === "" || !LEARNERS_ROSTER[index]) return;
+  activeLearner = LEARNERS_ROSTER[index];
+  document.getElementById('active-learner-display').innerText = `${activeLearner.name} (${activeLearner.grade} - ${activeLearner.village})`;
+  document.getElementById('active-learner-avatar-icon').innerText = activeLearner.avatarIcon || '🟩';
+  saveLearnersToStorage();
+}
+
+function deleteLearner(learnerId) {
+  const index = LEARNERS_ROSTER.findIndex(l => l.id === learnerId || l.id == learnerId);
+  if (index === -1) return;
+
+  const learnerToDelete = LEARNERS_ROSTER[index];
+  if (!confirm(`Delete "${learnerToDelete.name}" from Minecraft world?`)) return;
+
+  playSFX('click');
+  remove3DAvatar(learnerToDelete.id);
+  LEARNERS_ROSTER.splice(index, 1);
+  activeLearner = LEARNERS_ROSTER.length > 0 ? LEARNERS_ROSTER[0] : null;
+
+  saveLearnersToStorage();
+  renderDashboardRoster();
+  populateLearnerSelector();
+}
+
+function remove3DAvatar(learnerId) {
+  if (typeof scene === "undefined" || !scene) return;
+  const objectToRemove = scene.getObjectByName(`avatar_${learnerId}`);
+  if (objectToRemove) {
+    scene.remove(objectToRemove);
+  }
+}
+
+// --- GAME ACTIVITY ENGINE & ITEM LOADER ---
+function startRealmQuest(realmId) {
+  if (!activeLearner) {
+    alert("Please register a learner first!");
+    switchView('dashboard');
+    return;
+  }
+
+  currentRealmId = realmId;
+  currentItemIndex = 0;
+  currentXP = activeLearner.xp || 0;
+  currentCoins = activeLearner.coins || 0;
+  currentHearts = 3;
+
+  populateLearnerSelector();
+  switchView('game');
+  loadGameItem();
+}
+
+function exitGame() {
+  switchView('realms');
+}
+
+function loadGameItem() {
+  const realm = REALMS_DATA.find(r => r.id === currentRealmId);
+  const items = GAME_ITEMS_DATABASE[currentRealmId] || GAME_ITEMS_DATABASE['alphabet'];
+  const currentItem = items[currentItemIndex];
+
+  document.getElementById('game-realm-title').innerText = realm.title;
+  document.getElementById('game-progress-text').innerText = `Item ${currentItemIndex + 1} of ${items.length}`;
+  document.getElementById('game-xp').innerText = currentXP;
+  document.getElementById('game-coins').innerText = currentCoins;
+  
+  const heartsContainer = document.getElementById('hearts-container');
+  heartsContainer.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    heartsContainer.innerHTML += `<span class="text-2xl ${i < currentHearts ? '' : 'heart-lost'}">❤️</span>`;
+  }
+
+  document.getElementById('level-villager-badge').innerText = `Host: ${realm.villagerName}`;
+  document.getElementById('level-villager-dialogue').innerText = `"${realm.villagerGreeting}"`;
+
+  document.getElementById('game-question-prompt').innerText = currentItem.prompt;
+  document.getElementById('game-visual-cue').innerText = currentItem.visual;
+  document.getElementById('hint-text').classList.add('hidden');
+
+  const dropBox = document.getElementById('drop-target-box');
+  dropBox.className = "drop-target w-52 h-52 md:w-60 md:h-60 mc-panel-light border-4 border-dashed border-stone-800 flex flex-col items-center justify-center p-4 relative";
+  document.getElementById('drop-target-content').innerText = "❓";
+
+  // SHUFFLE OPTION POSITIONS PER QUESTION
+  const randomizedChoices = shuffleArray(currentItem.choices);
+
+  const optionsPool = document.getElementById('draggable-options-pool');
+  optionsPool.innerHTML = randomizedChoices.map(choice => `
+    <div draggable="true" ondragstart="handleDragStart(event, '${choice}')" onclick="handleOptionClick('${choice}')" class="draggable-item mc-button mc-button-gold font-kids text-2xl md:text-3xl px-6 py-4 rounded-none cursor-pointer">
+      ${choice}
+    </div>
+  `).join('');
+
+  dropBox.ondragover = (e) => { e.preventDefault(); dropBox.classList.add('drag-over'); };
+  dropBox.ondragleave = () => { dropBox.classList.remove('drag-over'); };
+  dropBox.ondrop = (e) => {
+    e.preventDefault();
+    dropBox.classList.remove('drag-over');
+    if (activeDragItem) evaluateAnswer(activeDragItem);
+  };
+
+  speakMia(currentItem.prompt, 'gentle');
+}
+
+function handleDragStart(e, val) {
+  activeDragItem = val;
+  e.dataTransfer.setData('text/plain', val);
+}
+
+function handleOptionClick(val) {
+  evaluateAnswer(val);
+}
+
+function evaluateAnswer(selectedChoice) {
+  const items = GAME_ITEMS_DATABASE[currentRealmId] || GAME_ITEMS_DATABASE['alphabet'];
+  const currentItem = items[currentItemIndex];
+
+  if (selectedChoice.toLowerCase() === currentItem.answer.toLowerCase()) {
+    playSFX('correct');
+    currentXP += 50;
+    currentCoins += 10;
+    
+    if (activeLearner) {
+      activeLearner.xp = currentXP;
+      activeLearner.coins = currentCoins;
+      saveLearnersToStorage();
+    }
+    
+    document.getElementById('drop-target-content').innerText = selectedChoice;
+    document.getElementById('drop-target-box').classList.add('bg-emerald-200');
+    
+    speakMia("Yay! You got the right block!", "excited");
+
+    setTimeout(() => {
+      currentItemIndex++;
+      if (currentItemIndex < items.length) {
+        loadGameItem();
+      } else {
+        playSFX('fanfare');
+        speakMia(`Hooray! Quest completed! You are a super reader!`, 'excited');
+        alert(`🎉 QUEST COMPLETED!\n\nYou finished all 10 items! Earned ${currentXP} XP and ${currentCoins} Diamonds!`);
+        switchView('realms');
+      }
+    }, 1000);
+
+  } else {
+    playSFX('wrong');
+    currentHearts--;
+    speakMia("Oops, try another block!", "encouraging");
+
+    const heartsContainer = document.getElementById('hearts-container');
+    if (heartsContainer.children[currentHearts]) {
+      heartsContainer.children[currentHearts].classList.add('heart-lost');
+    }
+
+    if (currentHearts <= 0) {
+      setTimeout(() => {
+        alert("Ran out of hearts! Restarting quest.");
+        currentItemIndex = 0;
+        currentHearts = 3;
+        loadGameItem();
+      }, 500);
+    }
+  }
+}
+
+function readQuestionPrompt() {
+  const promptText = document.getElementById('game-question-prompt').innerText;
+  speakMia(promptText, 'gentle');
+}
+
+function giveHint() {
+  const items = GAME_ITEMS_DATABASE[currentRealmId] || GAME_ITEMS_DATABASE['alphabet'];
+  const currentItem = items[currentItemIndex];
+  const hintEl = document.getElementById('hint-text');
+  hintEl.innerText = `💡 Mia says: ${currentItem.hint}`;
+  hintEl.classList.remove('hidden');
+  speakMia(currentItem.hint, 'encouraging');
+}
+
+function cheerMia() {
+  playSFX('correct');
+  speakMia(`High five ${activeLearner ? activeLearner.name : ''}! Keep up the great reading!`, 'excited');
+  confetti({ particleCount: 40, spread: 50 });
+}
+
+// --- TEACHER DASHBOARD & REGISTRATION ---
+function renderDashboardRoster() {
+  const tbody = document.getElementById('roster-tbody');
+  if (!tbody) return;
+
+  if (LEARNERS_ROSTER.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-stone-400 font-kids text-2xl">No learners registered yet!</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = LEARNERS_ROSTER.map((l) => `
+    <tr class="hover:bg-stone-800 transition">
+      <td class="py-3 px-4 font-bold text-yellow-400 flex items-center space-x-2">
+        <span>${l.avatarIcon || '🟩'}</span>
+        <span>${l.name}</span>
+      </td>
+      <td class="py-3 px-4 text-stone-200">${l.grade} (${l.village})</td>
+      <td class="py-3 px-4 text-emerald-400 font-bold">${l.accuracy}%</td>
+      <td class="py-3 px-4 font-bold text-cyan-400">${l.wpm} WPM</td>
+      <td class="py-3 px-4 text-yellow-400 font-bold">${l.compScore}%</td>
+      <td class="py-3 px-4">
+        ${(l.unlocks || ['Wooden Sword']).map(u => `<span class="bg-stone-900 border border-yellow-500 text-yellow-400 text-sm px-2 py-0.5 mr-1 font-kids">${u}</span>`).join('')}
+      </td>
+      <td class="py-3 px-4">
+        <div class="flex items-center space-x-2">
+          <button onclick="openCertificateModal('${l.id}')" class="mc-button mc-button-gold text-xs px-2 py-1 font-minecraft">
+            📜 Cert
+          </button>
+          <button onclick="deleteLearner('${l.id}')" class="mc-button mc-button-red text-xs px-2 py-1 font-minecraft">
+            🗑️
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function handleLearnerSubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById('input-name').value.trim();
+  const grade = document.getElementById('input-grade').value;
+  const section = document.getElementById('input-section').value.trim();
+  const sy = document.getElementById('input-sy').value.trim();
+
+  let villageName = 'Sunshine Plains';
+  let icon = '🟩';
+  if (grade === 'Grade 2') { villageName = 'Oak Forest Biome'; icon = '🌲'; }
+  if (grade === 'Grade 3') { villageName = 'Blocky River Castle'; icon = '🏰'; }
+
+  const newLearner = {
+    id: 'learner_' + Date.now(),
+    name,
+    grade,
+    village: villageName,
+    section,
+    sy,
+    xp: 100,
+    coins: 20,
+    accuracy: 95,
+    wpm: 40,
+    compScore: 90,
+    avatarIcon: icon,
+    unlocks: ['Wooden Sword']
+  };
+
+  LEARNERS_ROSTER.push(newLearner);
+  activeLearner = newLearner;
+
+  saveLearnersToStorage();
+  renderDashboardRoster();
+  populateLearnerSelector();
+
+  document.getElementById('add-learner-form').reset();
+  alert(`Pixel Avatar for ${name} spawned successfully!`);
+}
+
+function triggerClassFestival(villageName) {
+  playSFX('fanfare');
+  const banner = document.getElementById('festival-banner');
+  document.getElementById('festival-banner-text').innerText = `${villageName} Reading Goal Achieved! Village Festival in Progress!`;
+  banner.classList.remove('hidden');
+
+  speakMia(`Hooray! ${villageName} achieved reading goal!`, 'excited');
+
+  setTimeout(() => {
+    banner.classList.add('hidden');
+  }, 4000);
+}
+
+function exportToExcel() {
+  if (typeof XLSX === 'undefined') {
+    alert("SheetJS loading...");
+    return;
+  }
+  const data = LEARNERS_ROSTER.map(l => ({
+    "Learner Name": l.name,
+    "Grade Level": l.grade,
+    "Village": l.village,
+    "Section": l.section,
+    "School Year": l.sy,
+    "Reading XP": l.xp,
+    "Diamonds Earned": l.coins,
+    "Accuracy (%)": l.accuracy,
+    "WPM": l.wpm,
+    "Comprehension (%)": l.compScore
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Minecraft Analytics");
+  XLSX.writeFile(workbook, "Dau_ES_Minecraft_Reading_Analytics.xlsx");
+}
+
+function openCertificateModal(learnerId) {
+  const learner = LEARNERS_ROSTER.find(l => l.id === learnerId || l.id == learnerId) || LEARNERS_ROSTER[0];
+  if (!learner) return;
+
+  document.getElementById('cert-student-name').innerText = learner.name;
+  document.getElementById('cert-student-section').innerText = `${learner.grade} - ${learner.section} (SY ${learner.sy})`;
+  
+  const realmsContainer = document.getElementById('cert-realms-container');
+  realmsContainer.innerHTML = (learner.unlocks || ['Wooden Sword']).map(u => `
+    <span class="mc-panel bg-amber-200 text-black px-3 py-1 text-base font-kids border border-black font-bold">⭐ ${u}</span>
+  `).join('');
+
+  document.getElementById('certificate-modal').classList.remove('hidden');
+}
+
+function closeCertificateModal() {
+  document.getElementById('certificate-modal').classList.add('hidden');
+}
+
+// --- THREE.JS 3D MINECRAFT VOXEL BACKGROUND ENGINE ---
+let scene, camera, renderer, SteveCube;
+function init3DBackground() {
+  const container = document.getElementById('canvas-container');
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x70b5ff);
+
+  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.set(0, 6, 12);
+  camera.lookAt(0, 1, 0);
+
+  renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+  scene.add(ambientLight);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+  dirLight.position.set(10, 20, 10);
+  scene.add(dirLight);
+
+  const groundGeo = new THREE.BoxGeometry(40, 1, 40);
+  const groundMat = new THREE.MeshLambertMaterial({ color: 0x5c8e32 });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.position.y = -0.5;
+  scene.add(ground);
+
+  const steveGeo = new THREE.BoxGeometry(1.2, 2.4, 0.8);
+  const steveMat = new THREE.MeshLambertMaterial({ color: 0x00a8a8 });
+  SteveCube = new THREE.Mesh(steveGeo, steveMat);
+  SteveCube.position.set(0, 1.2, 0);
+  scene.add(SteveCube);
+
+  for(let i=0; i<8; i++) {
+    const trunkGeo = new THREE.BoxGeometry(0.8, 3, 0.8);
+    const trunkMat = new THREE.MeshLambertMaterial({ color: 0x674a27 });
+    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+    const angle = (i / 8) * Math.PI * 2;
+    trunk.position.set(Math.sin(angle)*12, 1.5, Math.cos(angle)*12);
+    
+    const leavesGeo = new THREE.BoxGeometry(2.5, 2.5, 2.5);
+    const leavesMat = new THREE.MeshLambertMaterial({ color: 0x22c55e });
+    const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+    leaves.position.set(Math.sin(angle)*12, 3.8, Math.cos(angle)*12);
+
+    scene.add(trunk);
+    scene.add(leaves);
+  }
+
+  let clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    const time = clock.getElapsedTime();
+    if (SteveCube) {
+      SteveCube.position.x = Math.sin(time * 0.8) * 4;
+      SteveCube.position.z = Math.cos(time * 0.8) * 2;
+      SteveCube.rotation.y = time * 0.8;
+      SteveCube.position.y = 1.2 + Math.abs(Math.sin(time * 4)) * 0.3;
+    }
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+}
+
+window.switch3DVillageTheme = function(villageId) {
+  const village = VILLAGES_DATA.find(v => v.id === villageId);
+  if (village && SteveCube) {
+    SteveCube.material.color.setHex(village.colorHex);
+  }
+};
+
+// Initialize Application
+window.addEventListener('load', () => {
+  loadLearnersFromStorage();
+  init3DBackground();
+  renderHomeSummary();
+  renderVillagesView();
+  renderRealmsList();
+  renderDashboardRoster();
+  populateLearnerSelector();
+});
+</script>
+</body>
+</html>
